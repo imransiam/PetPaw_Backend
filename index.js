@@ -59,11 +59,30 @@ async function run() {
 });
 
 
+    
+    
     app.get('/services/:id', async(req,res)=>{
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const service = await servicesCollection.findOne(query);
       res.send(service);
+    })
+
+    app.get('/myservices',async(req,res)=>{
+      const {email} = req.query
+      
+      console.log(email);
+      const query = {email: email}
+      const result = await servicesCollection.find(query).toArray()
+      res.send(result);
+    })
+
+    app.put('/updateListing/:id',async(req,res)=>{
+      const data = req.body;
+      const id = req.params;
+      const query = { _id: new ObjectId(id)}
+      console.log(data);
+      
     })
 
     
