@@ -82,7 +82,13 @@ async function run() {
       const id = req.params;
       const query = { _id: new ObjectId(id)}
       console.log(data);
-      
+
+      const updateListing = {
+        $set: data
+      }
+
+      const result = await servicesCollection.updateOne(query, updateListing);
+      res.send(result);
     })
 
     
