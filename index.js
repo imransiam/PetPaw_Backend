@@ -2,18 +2,15 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
-const port = 5000;
-
 
 const app = express();
+const port = process.env.PORT || 5000;
+
 app.use(cors());
 app.use(express.json());
 
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.szs3oxm.mongodb.net/?appName=Cluster0`;
 
-
-const uri = "mongodb+srv://PawMart:1tJH9uevLwTm63tm@cluster0.szs3oxm.mongodb.net/?appName=Cluster0";
-
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -24,97 +21,91 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
-
     const database = client.db('petservices');
     const servicesCollection = database.collection('services');
+    const orderscollection = database.collection('orders');
 
-// post or save services to database
+    // service related apis
     app.post('/services', async (req, res) => {
-  const data = req.body;
-  const date = new Date();
-  data.CreatedAt = date;
-  console.log("Received:", data);
-  const result = await servicesCollection.insertOne(data);
-  res.status(200).send(result);
-});
-// get or fetch services from database
+      const data = req.body;
+      const date = new Date();
+      data.CreatedAt = date;
+      const result = await servicesCollection.insertOne(data);
+      res.send(result);
+    });
 
     app.get('/services', async (req, res) => {
-  const { category } = req.query;  // optional query param
-  let query = {};
+      const { category } = req.query;
+      let query = {};
+      if (category) {
+        query = { category: category };
+      }
+      const result = await servicesCollection.find(query).toArray();
+      res.send(result);
+    });
 
-  if (category) {
-    query = { category };  // filter by category
-  }
-
-  try {
-    const result = await servicesCollection.find(query).toArray();
-    res.send(result);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ message: "Server error" });
-  }
-});
-
-
-    
-    
-    app.get('/services/:id', async(req,res)=>{
+    app.get('/services/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const service = await servicesCollection.findOne(query);
       res.send(service);
-    })
+    });
 
-    app.get('/myservices',async(req,res)=>{
-      const {email} = req.query
-      
-      console.log(email);
-      const query = {email: email}
-      const result = await servicesCollection.find(query).toArray()
+    app.get('/myservices', async (req, res) => {
+      const { email } = req.query;
+      const query = { email: email };
+      const result = await servicesCollection.find(query).toArray();
       res.send(result);
-    })
+    });
 
-    app.put('/updateListing/:id',async(req,res)=>{
+    app.put('/updateListing/:id', async (req, res) => {
       const data = req.body;
-      const id = req.params;
-      const query = { _id: new ObjectId(id)}
-      console.log(data);
-
-      const updateListing = {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
         $set: data
-      }
-
-      const result = await servicesCollection.updateOne(query, updateListing);
+      };
+      const result = await servicesCollection.updateOne(query, updateDoc);
       res.send(result);
-    })
+    });
 
-    app.delete('/deleteListing/:id', async(req,res)=>{
-      const id =req.params.id;
-      const query = { _id: new ObjectId(id)}
+    app.delete('/deleteListing/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
       const result = await servicesCollection.deleteOne(query);
       res.send(result);
-    })
+    });
 
-    
+    // order related apis
+    app.post('/orders', async (req, res) => {
+      const data = req.body;
+      const result = await orderscollection.insertOne(data);
+      res.send(result);
+    });
 
+    app.get('/orders', async (req, res) => {
+      const email = req.query.email;
+      let query = {};
+      if (email) {
+        query = { email: email };
+      }
+      const result = await orderscollection.find(query).toArray();
+      res.send(result);
+    });
 
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log("Connected to MongoDB");
   } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
+    // client.close() is skipped to keep connection alive
   }
 }
 run().catch(console.dir);
 
 app.get('/', (req, res) => {
-  res.send('Paw Mart is running');
+  res.send('Paw Mart server is running');
 });
 
 app.listen(port, () => {
-  console.log(`Paw Mart server is running on port: ${port}`);
+  console.log(`Server is running on port: ${port}`);
 });
+
+module.exports = app;
