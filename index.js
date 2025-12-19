@@ -95,7 +95,7 @@ async function run() {
 
     console.log("Connected to MongoDB");
   } finally {
-    // client.close() is skipped to keep connection alive
+    // client.close() 
   }
 }
 run().catch(console.dir);
